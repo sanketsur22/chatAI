@@ -1,0 +1,316 @@
+"use client"
+
+import type React from "react"
+
+import { useState, useRef, useEffect } from "react"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Textarea } from "@/components/ui/textarea"
+import { Send, Paperclip, ImageIcon, FileText, Video, Edit3, Check, X, User, Bot } from "lucide-react"
+import { ChatHeader } from "@/components/chat-header"
+import { ChatSidebar } from "@/components/chat-sidebar"
+import { FileUploadDialog } from "@/components/file-upload-dialog"
+import { ClientWrapper } from "@/components/client-wrapper"
+
+interface Message {
+  id: string
+  role: "user" | "assistant"
+  content: string
+  timestamp: Date
+  files?: File[]
+  isEditing?: boolean
+}
+
+function ChatPageContent() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "1",
+      role: "assistant",
+      content:
+        "Hello! I'm your AI assistant. How can I help you today? You can ask me questions, upload files, or start a conversation about anything.",
+      timestamp: new Date("2024-01-01T12:00:00Z"),
+    },
+  ])
+  const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null)
+  const [editingContent, setEditingContent] = useState("")
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [messageCounter, setMessageCounter] = useState(2)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const handleSendMessage = async () => {
+    if (!input.trim()) return
+
+    const newMessage: Message = {
+      id: messageCounter.toString(),
+      role: "user",
+      content: input,
+      timestamp: new Date(),
+    }
+
+    setMessages((prev) => [...prev, newMessage])
+    setInput("")
+    setIsLoading(true)
+    setMessageCounter((prev) => prev + 1)
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiResponse: Message = {
+        id: (messageCounter + 1).toString(),
+        role: "assistant",
+        content: `I understand you said: "${input}". This is a simulated response. In a real implementation, this would be connected to an AI service like OpenAI's GPT API.`,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, aiResponse])
+      setMessageCounter((prev) => prev + 1)
+      setIsLoading(false)
+    }, 1000)
+  }
+
+  const handleEditMessage = (messageId: string, content: string) => {
+    setEditingMessageId(messageId)
+    setEditingContent(content)
+  }
+
+  const handleSaveEdit = (messageId: string) => {
+    setMessages((prev) => prev.map((msg) => (msg.id === messageId ? { ...msg, content: editingContent } : msg)))
+    setEditingMessageId(null)
+    setEditingContent("")
+  }
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null)
+    setEditingContent("")
+  }
+
+  const handleFileUpload = (files: File[]) => {
+    if (files.length === 0) return
+
+    const newMessage: Message = {
+      id: messageCounter.toString(),
+      role: "user",
+      content: `Uploaded ${files.length} file(s): ${files.map((f) => f.name).join(", ")}`,
+      timestamp: new Date(),
+      files: files,
+    }
+
+    setMessages((prev) => [...prev, newMessage])
+    setMessageCounter((prev) => prev + 1)
+
+    // Simulate AI response for file upload
+    setTimeout(() => {
+      const aiResponse: Message = {
+        id: (messageCounter + 1).toString(),
+        role: "assistant",
+        content: `I've received your file(s). In a real implementation, I would analyze the content and provide relevant insights or answers based on the uploaded files.`,
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, aiResponse])
+      setMessageCounter((prev) => prev + 1)
+    }, 1000)
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Sidebar */}
+      <ChatSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Header */}
+        <ChatHeader onMenuClick={() => setSidebarOpen(true)} />
+
+        {/* Messages Area */}
+        <ScrollArea className="flex-1 p-4">
+          <div className="max-w-4xl mx-auto space-y-6">
+            {messages.map((message) => (
+              <div
+                key={message.id}
+                className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                {message.role === "assistant" && (
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4 text-white" />
+                  </div>
+                )}
+
+                <Card
+                  className={`max-w-[80%] p-4 ${
+                    message.role === "user" ? "bg-blue-600 text-white" : "bg-white dark:bg-gray-800"
+                  }`}
+                >
+                  {editingMessageId === message.id ? (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={editingContent}
+                        onChange={(e) => setEditingContent(e.target.value)}
+                        className="min-h-[60px] resize-none"
+                      />
+                      <div className="flex gap-2">
+                        <Button size="sm" onClick={() => handleSaveEdit(message.id)} className="h-7">
+                          <Check className="w-3 h-3" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={handleCancelEdit} className="h-7">
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      {message.files && message.files.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {message.files.map((file, index) => (
+                            <div
+                              key={index}
+                              className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-3 py-1 text-sm"
+                            >
+                              {file.type.startsWith("image/") && <ImageIcon className="w-4 h-4" />}
+                              {file.type.startsWith("video/") && <Video className="w-4 h-4" />}
+                              {file.type.includes("pdf") ||
+                                (file.type.includes("document") && <FileText className="w-4 h-4" />)}
+                              <span className="truncate max-w-[150px]">{file.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      {message.role === "user" && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleEditMessage(message.id, message.content)}
+                          className="h-6 p-1 opacity-70 hover:opacity-100"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </Card>
+
+                {message.role === "user" && (
+                  <div className="w-8 h-8 bg-gray-300 dark:bg-gray-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4" />
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {isLoading && (
+              <div className="flex gap-4 justify-start">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+                <Card className="p-4 bg-white dark:bg-gray-800">
+                  <div className="flex items-center gap-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.1s" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0.2s" }}
+                      ></div>
+                    </div>
+                    <span className="text-sm text-gray-500">AI is thinking...</span>
+                  </div>
+                </Card>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Input Area */}
+        <div className="border-t bg-white dark:bg-gray-800 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex gap-2 items-end">
+              <div className="flex-1 relative">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Type your message here..."
+                  className="min-h-[60px] max-h-[200px] resize-none pr-12"
+                />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setUploadDialogOpen(true)}
+                  className="absolute right-2 bottom-2 h-8 w-8 p-0"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+              </div>
+              <Button onClick={handleSendMessage} disabled={!input.trim() || isLoading} className="h-[60px] px-6">
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* File Upload Dialog */}
+      <FileUploadDialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen} onFilesSelected={handleFileUpload} />
+    </div>
+  )
+}
+
+// Loading fallback for chat page
+function ChatLoadingFallback() {
+  return (
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 flex flex-col">
+        <header className="border-b bg-white dark:bg-gray-800 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                  <Bot className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  ChatAI
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-500">Loading chat...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default function ChatPage() {
+  return (
+    <ClientWrapper fallback={<ChatLoadingFallback />}>
+      <ChatPageContent />
+    </ClientWrapper>
+  )
+}
