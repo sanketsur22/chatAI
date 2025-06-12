@@ -1,23 +1,33 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, MessageSquare, Upload, Edit3, Sparkles, Zap, Shield } from "lucide-react"
-import { ClientWrapper } from "@/components/client-wrapper"
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  ArrowRight,
+  MessageSquare,
+  Upload,
+  Edit3,
+  Sparkles,
+  Zap,
+  Shield,
+} from "lucide-react";
+import { ClientWrapper } from "@/components/client-wrapper";
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs";
 
 function LandingPageContent() {
-  const router = useRouter()
-  const [isLoaded, setIsLoaded] = useState(false)
+  const router = useRouter();
+  const [isLoaded, setIsLoaded] = useState(false);
+  const { isSignedIn, user } = useUser();
 
   useEffect(() => {
-    setIsLoaded(true)
-  }, [])
+    setIsLoaded(true);
+  }, []);
 
   const handleGetStarted = () => {
-    router.push("/chat")
-  }
+    router.push("/chat");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
@@ -32,44 +42,103 @@ function LandingPageContent() {
               ChatAI
             </span>
           </div>
-          <Button onClick={handleGetStarted} variant="outline">
-            Sign In
-          </Button>
+          <div className="flex items-center gap-4">
+            {isSignedIn ? (
+              <div className="flex items-center gap-4">
+                {user?.username && (
+                  <span className="hidden md:inline text-sm text-gray-600 dark:text-gray-300">
+                    Welcome, {user.username}!
+                  </span>
+                )}
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <SignInButton mode="modal">
+                  <Button variant="outline">Sign In</Button>
+                </SignInButton>
+                <SignUpButton mode="modal">
+                  <Button>Sign Up</Button>
+                </SignUpButton>
+              </div>
+            )}
+          </div>
         </nav>
       </header>
 
       {/* Hero Section */}
       <main className="container mx-auto px-4 py-20">
         <div
-          className={`text-center space-y-8 transition-all duration-1000 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+          className={`text-center space-y-8 transition-all duration-1000 ${
+            isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          }`}
         >
           <div className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
               Chat with AI
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Experience the future of conversation. Upload files, edit messages, and get intelligent responses powered
-              by advanced AI.
+              Experience the future of conversation. Upload files, edit
+              messages, and get intelligent responses powered by advanced AI.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button
-              onClick={handleGetStarted}
-              size="lg"
-              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg"
-            >
-              Get Started <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-            <Button variant="outline" size="lg" className="px-8 py-3 text-lg">
-              Learn More
-            </Button>
+            {isLoaded ? (
+              <>
+                {isSignedIn ? (
+                  <Button
+                    onClick={handleGetStarted}
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg"
+                  >
+                    Go to Chat <ArrowRight className="ml-2 w-5 h-5" />
+                  </Button>
+                ) : (
+                  <SignUpButton mode="modal">
+                    <Button
+                      size="lg"
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-8 py-3 text-lg"
+                    >
+                      Get Started <ArrowRight className="ml-2 w-5 h-5" />
+                    </Button>
+                  </SignUpButton>
+                )}
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="px-8 py-3 text-lg"
+                >
+                  Learn More
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  disabled
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 text-lg opacity-75"
+                >
+                  Loading...
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="px-8 py-3 text-lg"
+                  disabled
+                >
+                  Learn More
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Features Grid */}
         <div
-          className={`mt-20 grid md:grid-cols-3 gap-8 transition-all duration-1000 delay-300 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+          className={`mt-20 grid md:grid-cols-3 gap-8 transition-all duration-1000 delay-300 ${
+            isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          }`}
         >
           <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
             <CardContent className="p-6 text-center space-y-4">
@@ -78,7 +147,8 @@ function LandingPageContent() {
               </div>
               <h3 className="text-xl font-semibold">Smart Conversations</h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Engage in natural, intelligent conversations with our advanced AI assistant.
+                Engage in natural, intelligent conversations with our advanced
+                AI assistant.
               </p>
             </CardContent>
           </Card>
@@ -90,7 +160,8 @@ function LandingPageContent() {
               </div>
               <h3 className="text-xl font-semibold">File Upload</h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Upload documents, images, videos, and more to enhance your conversations.
+                Upload documents, images, videos, and more to enhance your
+                conversations.
               </p>
             </CardContent>
           </Card>
@@ -102,7 +173,8 @@ function LandingPageContent() {
               </div>
               <h3 className="text-xl font-semibold">Edit Messages</h3>
               <p className="text-gray-600 dark:text-gray-300">
-                Refine your messages and get better responses with our editing feature.
+                Refine your messages and get better responses with our editing
+                feature.
               </p>
             </CardContent>
           </Card>
@@ -110,7 +182,9 @@ function LandingPageContent() {
 
         {/* Additional Features */}
         <div
-          className={`mt-20 text-center transition-all duration-1000 delay-500 ${isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`}
+          className={`mt-20 text-center transition-all duration-1000 delay-500 ${
+            isLoaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
+          }`}
         >
           <h2 className="text-3xl font-bold mb-12">Why Choose ChatAI?</h2>
           <div className="grid md:grid-cols-3 gap-8">
@@ -146,7 +220,7 @@ function LandingPageContent() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
 
 // Loading fallback component
@@ -163,9 +237,12 @@ function LoadingFallback() {
               ChatAI
             </span>
           </div>
-          <Button variant="outline" disabled>
-            Sign In
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" disabled>
+              Sign In
+            </Button>
+            <Button disabled>Sign Up</Button>
+          </div>
         </nav>
       </header>
       <main className="container mx-auto px-4 py-20">
@@ -175,14 +252,17 @@ function LoadingFallback() {
               Chat with AI
             </h1>
             <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Experience the future of conversation. Upload files, edit messages, and get intelligent responses powered
-              by advanced AI.
+              Experience the future of conversation. Upload files, edit
+              messages, and get intelligent responses powered by advanced AI.
             </p>
+          </div>
+          <div className="flex justify-center mt-12">
+            <div className="w-16 h-16 border-t-2 border-b-2 border-blue-600 rounded-full animate-spin"></div>
           </div>
         </div>
       </main>
     </div>
-  )
+  );
 }
 
 export default function LandingPage() {
@@ -190,5 +270,5 @@ export default function LandingPage() {
     <ClientWrapper fallback={<LoadingFallback />}>
       <LandingPageContent />
     </ClientWrapper>
-  )
+  );
 }
